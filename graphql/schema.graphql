@@ -1,0 +1,44 @@
+# Tipo Paciente que representa un documento de MongoDB
+type Paciente {
+    id: ID!
+    nombre: String!
+    edad: Int!
+    historialClinico: String!
+    activo: Boolean!
+}
+
+# Consultas disponibles
+type Query {
+
+    # Obtener todos los pacientes
+    pacientes: [Paciente]
+
+    # Obtener un paciente por ID
+    paciente(id: ID!): Paciente
+}
+
+# Operaciones de modificación de datos
+type Mutation {
+
+    # Crear paciente
+    crearPaciente(
+        nombre: String!
+        edad: Int!
+        historialClinico: String!
+        activo: Boolean!
+    ): Paciente
+
+    # Actualizar paciente
+    actualizarPaciente(
+        id: ID!
+        nombre: String
+        edad: Int
+        historialClinico: String
+        activo: Boolean
+    ): Paciente
+
+    # Eliminar paciente
+    eliminarPaciente(
+        id: ID!
+    ): String
+}

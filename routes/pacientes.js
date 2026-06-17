@@ -1,110 +1,29 @@
-// Importa el framework Express, para crear el servidor y manejar rutas HTTP
-const express = require("express");
+// Importa Router de Express
+import { Router } from "express";
 
-// Crea un enrutador de Express para definir rutas de forma modular
-const router = express.Router();
+// Importa el modelo Paciente
+import Paciente from "../models/Paciente.js";
 
-// Importa el modelo "Paciente" desde la carpeta models
-// Permite interactuar con la colección de pacientes en MongoDB
-const Paciente = require("../models/Paciente");
+// Crea la instancia del router
+const router = Router();
 
-// Ruta GET que obtiene todos los pacientes de la base de datos
+
+// =======================================
+// GET - Obtener todos los pacientes de la base de datos
+// =======================================
 router.get("/", async (req, res) => {
 
     try {
-        // Busca todos los registros de la colección Paciente en MongoDB
+	
+	//busca todos  los pacientes de la colección Paciente en mongoDB
         const pacientes = await Paciente.find();
-
-        // Responde con estado 200 (OK) y envía los pacientes en formato JSON
+	
+	//Responde con codigo 200 y envía en formato json
         res.status(200).json(pacientes);
 
     } catch (error) {
-        // Si ocurre un error, responde con estado 500 (error del servidor)
-        res.status(500).json({
-            // Envía el mensaje del error
-            mensaje: error.message
-        });
-    }
-});
 
-
-// Ruta POST que permite crear un nuevo paciente
-router.post("/", async (req, res) => {
-
-    // Extrae los datos enviados en el body de la petición
-    const {
-        nombre,
-        edad,
-        historialClinico,
-        activo
-    } = req.body;
-
-    // Valida que todos los campos requeridos estén presentes
-    if (
-        !nombre ||
-        edad === undefined ||
-        !historialClinico ||
-        activo === undefined
-    ) {
-        // Si falta algún campo, responde con error 400 (Bad Request)
-        return res.status(400).json({
-            mensaje: "Todos los campos son obligatorios"
-        });
-    }
-
-    try {
-
-        // Crea una nueva instancia del modelo Paciente con los datos recibidos
-        const paciente = new Paciente({
-            nombre,
-            edad,
-            historialClinico,
-            activo
-        });
-
-        // Guarda el nuevo paciente en la base de datos
-        const nuevoPaciente =
-            await paciente.save();
-
-        // Responde con estado 201 (creado) y el paciente guardado
-        res.status(201).json(nuevoPaciente);
-
-    } catch (error) {
-
-        // Si ocurre un error en el servidor, responde con estado 500
-        res.status(500).json({
-            mensaje: error.message
-        });
-    }
-});
-
-// Ruta PUT que actualiza un paciente por su ID
-router.put("/:id", async (req, res) => {
-
-    try {
-
-        // Busca un paciente por ID y lo actualiza con los datos enviados en el body
-        // { new: true } hace que devuelva el documento ya actualizado
-        const paciente =
-            await Paciente.findByIdAndUpdate(
-                req.params.id,
-                req.body,
-                { new: true }
-            );
-
-        // Si no se encuentra el paciente, responde con error 404
-        if (!paciente) {
-            return res.status(404).json({
-                mensaje: "Paciente no encontrado"
-            });
-        }
-
-        // Si se actualiza correctamente, responde con estado 200 y el paciente actualizado
-        res.status(200).json(paciente);
-
-    } catch (error) {
-
-        // Si ocurre un error en el servidor, responde con estado 500
+	//Sí hay error  responde con código 500 (error del servidor)
         res.status(500).json({
             mensaje: error.message
         });
@@ -112,62 +31,150 @@ router.put("/:id", async (req, res) => {
 });
 
 
-// Ruta DELETE que elimina un paciente por su ID
-router.delete("/:id", async (req, res) => {
-
-    try {
-
-        // Busca un paciente por ID y lo elimina de la base de datos
-        const paciente =
-            await Paciente.findByIdAndDelete(
-                req.params.id
-            );
-
-        // Si no se encuentra el paciente, responde con error 404
-        if (!paciente) {
-            return res.status(404).json({
-                mensaje: "Paciente no encontrado"
-            });
-        }
-
-        // Si se elimina correctamente, responde con mensaje de éxito
-        res.status(200).json({
-            mensaje: "Paciente eliminado"
-        });
-
-    } catch (error) {
-
-        // Si ocurre un error en el servidor, responde con estado 500
-        res.status(500).json({
-            mensaje: error.message
-        });
-    }
-});
-
-
-// Ruta GET que obtiene un paciente por su ID
+// =======================================
+// GET - Obtener paciente por ID
+// =======================================
 router.get("/:id", async (req, res) => {
 
     try {
-
-        const paciente = await Paciente.findById(req.params.id);
-
+	//busca un paciente por el id recibido el la URL
+        const paciente = await Paciente.findById(
+            req.params.id
+        );
+	//busca el paciente
         if (!paciente) {
+	//si no encuentra el id responde con código 400 NO ENCONTRADO
             return res.status(404).json({
                 mensaje: "Paciente no encontrado"
             });
         }
-
+	//Si lo encuentra devuelve 200 OK
         res.status(200).json(paciente);
 
     } catch (error) {
-
-        return res.status(400).json({
+	//si hay error captura el error y devulve 400
+        res.status(400).json({
             mensaje: "ID inválido",
             error: error.message
         });
     }
 });
 
-// Exporta el router
-module.exports = router;
+
+// =======================================
+// POST - Crear paciente
+// =======================================
+router.post("/", async (req, res) => {
+	//Extrae los datos enviado en el body
+    const {
+        nombre,
+        edad,
+        historialClinico,
+        activo
+    } = req.body;
+	//valida que los datos sean correctos
+    if (
+        !nombre ||
+        edad === undefined ||
+        !historialClinico ||
+        activo === undefined
+    ) {
+	//si hay error devuelve error 400
+        return res.status(400).json({
+            mensaje: "Todos los campos son obligatorios"
+        });
+    }
+
+    try {
+	//crea una nueva instancia del model Paciente
+        const paciente = new Paciente({
+            nombre,
+            edad,
+            historialClinico,
+            activo
+        });
+	//Guarda el nuevo paciente en DB
+        const nuevoPaciente =
+            await paciente.save();
+	//si es correcto entrega código 201 CREADO
+        res.status(201).json(	
+            nuevoPaciente
+        );
+
+    } catch (error) {
+	//Si hay error devuelve en el servidor, estado 500 
+        res.status(500).json({
+            mensaje: error.message
+        });
+    }
+});
+
+
+// =======================================
+// PUT - Actualizar paciente
+// =======================================
+router.put("/:id", async (req, res) => {
+
+    try {
+	//Busca un paciente por ID y lo actualiza
+        const paciente =
+            await Paciente.findByIdAndUpdate(
+                req.params.id,
+                req.body,
+                {
+                    new: true	//devuelve paciente actualizado
+                }
+            );
+
+        if (!paciente) {
+	//Si no encuentra el id devuelve el estado 404
+            return res.status(404).json({
+                mensaje: "Paciente no encontrado"
+            });
+        }
+	//Si es correcto devuelve estado ok 200 y guarda el Paciente
+        res.status(200).json(paciente);
+
+    } catch (error) {
+	//Si hay error en el servidor devuelve estado 500
+        res.status(500).json({
+            mensaje: error.message
+        });
+    }
+});
+
+
+// =======================================
+// DELETE - Eliminar paciente
+// =======================================
+router.delete("/:id", async (req, res) => {
+
+    try {
+	//busca paciente por ID y lo elimina
+        const paciente =
+            await Paciente.findByIdAndDelete(
+                req.params.id
+            );
+	//Si no encuentra el paciente entrega error 404 NO ENCONTRADO
+        if (!paciente) {
+
+            return res.status(404).json({
+                mensaje: "Paciente no encontrado"
+            });
+        }
+	//Si es eliminado correctamente entrega estado 200
+        res.status(200).json({
+            mensaje: "Paciente eliminado"
+        });
+
+    } catch (error) {
+	//Estado 500 si hay error en el servidor
+        res.status(500).json({
+            mensaje: error.message
+        });
+    }
+});
+
+
+// Exportar router
+export default router;

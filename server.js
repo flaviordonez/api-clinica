@@ -1,63 +1,108 @@
-// Carga las variables de entorno definidas en el archivo .env
-require("dotenv").config();
+/******************************************
+ IMPORTACIONES RESTFULL
+ *****************************************/
+ 
+// carga variables del archivo .env
+import dotenv from "dotenv";
 
-// Importa el framework Express
-const express = require("express");
+// Importamos Express para crear el SERVIDOR
+import express from "express";
 
-// Importa Mongoose para conectarse y trabajar con MongoDB
-const mongoose = require("mongoose");
+// Importa Mongoose para conectar con MONGODB
+import mongoose from "mongoose";
 
-// Importa CORS para permitir peticiones desde otros dominios
-const cors = require("cors");
+// Importa middleware CORS para peticione
+import cors from "cors";
 
-// Crea una instancia de la aplicación Express
+// Importa rutas
+import pacientesRoutes from "./routes/pacientes.js";
+
+/********************************************
+ IMPORTACIONES GRAPHQL
+ *******************************************/
+// Lectura de archivos
+import fs from "fs";
+
+// Funciones de GraphQL
+import { buildSchema } from "graphql";
+import { graphqlHTTP } from "express-graphql";
+
+// Importa los resolvers
+import resolvers from "./graphql/resolvers.js";
+/***********************************************
+***********************************************/
+
+// Cargar variables de entorno
+dotenv.config();
+
+/*********************************************
+Crea la aplicación Express para RESTFULL
+*********************************************/
 const app = express();
 
-// Habilita CORS para todas las rutas de la aplicación
+// Middlewares
 app.use(cors());
-
-// Permite que la aplicación reciba y procese datos en formato JSON
 app.use(express.json());
 
+/***********************************************
+ CARGA EL ESQUEMA GRAPHQL
+ ***********************************************/
+// Lee el archivo schema.graphql y construye el esquema GraphQL
+const schema = buildSchema(
+    fs.readFileSync(
+        "./graphql/schema.graphql",
+        "utf8"
+    )
+);
+//**********************************************/
 
-//Conexión Base de datos
-// Establece la conexión con la base de datos MongoDB
-mongoose.connect(
-    "mongodb://127.0.0.1:27017/clinica_db"
-)
 
-// Se ejecuta si la conexión es exitosa
-.then(() => {
+// Conexión a MongoDB utilizando el archivo .env
+mongoose.connect(process.env.MONGO_URI)
+.then(() => {				//Se ejecuta si la CONX. es OK
     console.log("MongoDB conectado");
 })
-
-// Se ejecuta si ocurre un error durante la conexión
-.catch(err => {
-    console.log(err);
+.catch(err => {		//Si hay error durante la CONEXION
+    console.error("Error en la conexión:", err);
 });
 
-//Importar rutas
-// Importa las rutas relacionadas con los pacientes
-const pacientesRoutes =
-    require("./routes/pacientes");
+//Ruta principal RAÍZ
+app.get("/", (req,res) => {
+    res.json({
+	mensaje: "API clínica funcionando"
+    });
+});
 
-// Asocia las rutas de pacientes al prefijo "/api/pacientes"
-// Todas las rutas definidas en pacientesRoutes comenzarán con esta URL
+//Rutas de pacientes
 app.use(
     "/api/pacientes",
-    pacientesRoutes
+     pacientesRoutes
 );
 
-//Declarar Puerto
+/********************************************
+ ENDPOINT ÚNICO GRAPHQL
+ *******************************************/
+
+//Endpoint único para GraphQL
+app.use(
+    "/graphql",
+    graphqlHTTP({
+        schema,
+        rootValue: resolvers,
+
+        // Habilita la interfaz gráfica para pruebas
+        graphiql: true
+    })
+);
+//********************************************/
+
 // Inicia el servidor en el puerto 3000
-app.listen(3000, () => {
+app.listen(
+    process.env.PORT,
+    () => {
+	console.log(
+	    `Servidor ejecutándose en puerto ${process.env.PORT}`
 
-    // Muestra un mensaje en la consola cuando el servidor se inicia correctamente
-    console.log(
-        "Servidor ejecutándose en puerto 3000"
-    );
-});
-
-
-// node server.js
-
+	    );
+	}
+);
